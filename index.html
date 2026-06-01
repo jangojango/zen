@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Zen Breath - 座禅と呼吸</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&display=swap');
+        body { font-family: 'Noto Sans JP', sans-serif; background-color: #f8fafc; color: #334155; overscroll-behavior-y: none; }
+        
+        /* グラフアニメーション用 */
+        #indicator { transition: cx 0.1s linear, cy 0.1s linear; }
+        
+        /* トグルスイッチ用 */
+        input:checked ~ .dot { transform: translateX(100%); }
+        input:checked ~ .block { background-color: #4ade80; }
+
+        /* スクロールバー非表示 */
+        ::-webkit-scrollbar { width: 0px; background: transparent; }
+    </style>
+</head>
+<body class="h-screen flex flex-col overflow-hidden">
+
+    <!-- ヘッダー -->
+    <header class="flex justify-between items-center p-4 bg-white shadow-sm z-10 relative">
+        <div class="flex items-center text-teal-600">
+            <i class="fa-solid fa-om text-2xl mr-2"></i>
+            <h1 class="text-xl font-bold tracking-wider">Zen Breath</h1>
+        </div>
+        <button id="infoBtn" class="text-slate-400 hover:text-teal-600 p-2 rounded-full transition-colors">
+            <i class="fa-solid fa-circle-info text-xl"></i>
+        </button>
+    </header>
+
+    <!-- メインコンテンツ -->
+    <main class="flex-1 overflow-y-auto pb-24 relative">
+        
+        <!-- ビジュアルエリア（上部） -->
+        <div class="relative w-full h-64 bg-white border-b border-slate-100 overflow-hidden flex flex-col items-center justify-center">
+            
+            <!-- 背景テキスト（状態表示） -->
+            <div id="stateTextBg" class="absolute inset-0 flex items-center justify-center text-6xl font-bold text-slate-50 opacity-0 transition-opacity duration-500 uppercase tracking-widest pointer-events-none select-none">
+                READY
+            </div>
+
+            <!-- ステータス情報（右上） -->
+            <div class="absolute top-4 right-4 text-right text-xs font-mono text-slate-400 z-10">
+                <div id="displayTime">00:00</div>
+                <div id="displayBreaths">Breaths: 0</div>
+                <div id="displayPhase">Phase: WAIT</div>
+            </div>
+
+            <!-- グラフ描画エリア (aspect ratioを固定して真円を保つ) -->
+            <svg id="graphSvg" class="w-full h-full max-w-2xl absolute inset-0 mx-auto opacity-30 transition-opacity duration-300" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid slice">
+                <!-- パス（線）: 濃いめのグレー、細く -->
+                <path id="graphPath" d="" fill="none" stroke="#64748b" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" />
+                <!-- インジケーター（真円）: rx, ryではなくrを使用 -->
+                <circle id="indicator" cx="0" cy="90" r="2.5" fill="#14b8a6" filter="drop-shadow(0 2px 3px rgba(20,184,166,0.4))" />
+            </svg>
+
+            <!-- スタートボタン（中央） -->
+            <div class="z-20 relative flex flex-col items-center justify-center h-full w-full">
+                <button id="startBtn" class="bg-teal-400 hover:bg-teal-500 text-white text-2xl font-medium py-4 px-12 rounded-full shadow-lg shadow-teal-200 transition-all transform hover:scale-105 active:scale-95 focus:outline-none">
+                    Press to Start
+                </button>
+                <div id="countdownText" class="text-7xl font-bold text-teal-500 hidden absolute">3</div>
+            </div>
+        </div>
+
+        <!-- 設定・説明エリア（下部） -->
+        <div class="p-6 max-w-md mx-auto">
+            
+            <!-- モード選択 -->
+            <div class="mb-6">
+                <div class="flex items-center justify-between mb-2">
+                    <h2 class="text-sm font-bold text-slate-500 uppercase tracking-widest">Mode Select</h2>
+                </div>
+                <select id="modeSelect" class="w-full bg-white border border-slate-200 text-slate-700 py-3 px-4 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-teal-400 focus:border-transparent appearance-none text-lg font-medium">
+                    <option value="zen1" selected>座禅 初級 (1:2の呼吸)</option>
+                    <option value="zen2">座禅 中級 (呼間長め)</option>
+                    <option value="zen3">座禅 上級 (達人の領域)</option>
+                    <option value="478">4-7-8 呼吸法 (入眠・鎮静)</option>
+                    <option value="box">Box 呼吸法 (集中・リセット)</option>
+                </select>
+            </div>
+
+            <!-- 動的レクチャーエリア（がっつり説明） -->
+            <div class="bg-teal-50/50 rounded-2xl p-5 border border-teal-100 mb-8 transition-all duration-300">
+                <h3 id="lectureTitle" class="text-teal-700 font-bold mb-3 flex items-center">
+                    <i class="fa-solid fa-person-praying mr-2"></i>座禅 初級の心得
+                </h3>
+                <div id="lectureContent" class="text-sm text-slate-600 space-y-3 leading-relaxed">
+                    <!-- JSで中身を入れ替える -->
+                </div>
+            </div>
+
+            <!-- 時間設定と詳細数値 -->
+            <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 mb-8">
+                <div class="flex justify-between items-center mb-6 pb-4 border-b border-slate-50">
+                    <span class="text-sm font-bold text-slate-500 uppercase tracking-wider">Timer</span>
+                    <div class="flex items-center space-x-4 bg-slate-50 rounded-lg p-1">
+                        <button id="timeMinusBtn" class="w-10 h-10 rounded text-teal-600 bg-white shadow-sm font-bold hover:bg-teal-50">-</button>
+                        <span id="timeSettingText" class="text-xl font-bold w-12 text-center text-slate-700">15m</span>
+                        <button id="timePlusBtn" class="w-10 h-10 rounded text-teal-600 bg-white shadow-sm font-bold hover:bg-teal-50">+</button>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-4 gap-2 text-center">
+                    <div class="flex flex-col">
+                        <span class="text-[10px] font-bold text-slate-400 uppercase">Inhale</span>
+                        <span id="valInhale" class="text-lg font-medium text-teal-600 mt-1">4.0s</span>
+                    </div>
+                    <div class="flex flex-col">
+                        <span class="text-[10px] font-bold text-slate-400 uppercase">Hold</span>
+                        <span id="valHold1" class="text-lg font-medium text-slate-600 mt-1">0.0s</span>
+                    </div>
+                    <div class="flex flex-col">
+                        <span class="text-[10px] font-bold text-slate-400 uppercase">Exhale</span>
+                        <span id="valExhale" class="text-lg font-medium text-teal-600 mt-1">8.0s</span>
+                    </div>
+                    <div class="flex flex-col">
+                        <span class="text-[10px] font-bold text-slate-400 uppercase">Hold</span>
+                        <span id="valHold2" class="text-lg font-medium text-slate-600 mt-1">0.0s</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 振動トグル -->
+            <div class="flex items-center justify-between bg-white rounded-2xl p-5 shadow-sm border border-slate-100 mb-8">
+                <div class="flex flex-col">
+                    <span class="font-bold text-slate-700 flex items-center">
+                        <i class="fa-solid fa-mobile-screen mr-2 text-slate-400"></i>Vibration
+                    </span>
+                    <span class="text-xs text-slate-400 mt-1">フェーズ切り替え時に振動</span>
+                </div>
+                <label for="vibrateToggle" class="flex items-center cursor-pointer">
+                    <div class="relative">
+                        <input type="checkbox" id="vibrateToggle" class="sr-only" checked>
+                        <div class="block bg-slate-200 w-12 h-7 rounded-full transition-colors duration-300"></div>
+                        <div class="dot absolute left-1 top-1 bg-white w-5 h-5 rounded-full transition-transform duration-300 shadow"></div>
+                    </div>
+                </label>
+            </div>
+
+            <!-- ベース解説 (infoボタンで開閉) -->
+            <div id="infoSection" class="hidden bg-white rounded-2xl p-5 shadow-sm border border-slate-100 text-sm text-slate-600 space-y-4">
+                <h3 class="font-bold text-slate-700 border-b border-slate-100 pb-2"><i class="fa-solid fa-book-open mr-2 text-teal-500"></i>このアプリの使い方</h3>
+                <p>目を閉じ、スマホからの「振動（バイブレーション）」だけを頼りに呼吸をコントロールするためのアプリです。</p>
+                <h4 class="font-bold text-slate-700 mt-4 mb-2">振動のルール</h4>
+                <ul class="list-disc pl-5 space-y-2">
+                    <li><strong>吸う前（Inhale）：</strong> 短く <span class="text-teal-600 font-bold">2回</span> 振動</li>
+                    <li><strong>吐く前・止める前：</strong> 短く <span class="text-slate-500 font-bold">1回</span> 振動</li>
+                    <li><strong>終了時：</strong> 長めに <span class="text-rose-400 font-bold">3回</span> 振動（セッション完了）</li>
+                </ul>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- 操作ボタン（下部固定） -->
+    <div class="fixed bottom-0 left-0 w-full bg-white border-t border-slate-200 p-4 pb-8 z-20 shadow-[0_-5px_15px_-5px_rgba(0,0,0,0.05)]">
+        <div class="max-w-md mx-auto flex justify-between gap-4">
+            <button id="resetBtn" class="flex-1 py-3 px-4 bg-slate-100 text-slate-600 font-bold rounded-xl hover:bg-slate-200 transition-colors disabled:opacity-50" disabled>
+                RESET
+            </button>
+            <button id="stopBtn" class="flex-1 py-3 px-4 bg-rose-50 text-rose-500 border border-rose-200 font-bold rounded-xl hover:bg-rose-100 transition-colors hidden">
+                STOP
+            </button>
+        </div>
+    </div>
+
+    <!-- 画面を暗くするオーバーレイ (座禅中用) -->
+    <div id="dimOverlay" class="fixed inset-0 bg-black opacity-0 pointer-events-none transition-opacity duration-[3000ms] z-0"></div>
+
+    <script>
+        // --- 設定・レクチャーデータ ---
+        const MODES = {
+            'zen1': { 
+                name: '座禅 初級', in: 4, hold1: 0, ex: 8, hold2: 0,
+                lectureTitle: '座禅 初級の心得',
+                lectureContent: `
+                    <p class="font-bold text-teal-800">「1吸って、2吐く」基本のリズム</p>
+                    <p>まずは姿勢を正し、肩の力を抜きます。おへその少し下（丹田）に意識を向け、空気を「自然に入れる（4秒）」感覚と、「細く長く押し出す（8秒）」感覚を掴みます。</p>
+                    <p><strong>意識すること：</strong><br>無理に息を絞り出そうとせず、風船の空気が自然に抜けていくようなイメージで、リラックスして吐き切ることを心がけてください。雑念が浮かんでも気にせず、ただ「吐く息」に意識を戻します。</p>
+                `
+            },
+            'zen2': { 
+                name: '座禅 中級', in: 4, hold1: 0, ex: 12, hold2: 0,
+                lectureTitle: '座禅 中級の心得',
+                lectureContent: `
+                    <p class="font-bold text-teal-800">呼間（吐く時間）を伸ばし、より深く</p>
+                    <p>初級の「細く長く」をさらに洗練させます。鼻の前に鳥の羽を置いても揺れないくらい、静かで穏やかな呼吸を目指します。</p>
+                    <p><strong>意識すること：</strong><br>12秒間吐き続けるには、横隔膜の繊細なコントロールが必要です。もし途中で息苦しさ（交感神経の緊張）を感じたら、それは「力み」が生じている証拠です。苦しい時は無理をせず、いつでも初級に戻ってください。自然に12秒吐ける状態が理想です。</p>
+                `
+            },
+            'zen3': { 
+                name: '座禅 上級', in: 4, hold1: 0, ex: 16, hold2: 0,
+                lectureTitle: '座禅 上級（達人の領域）',
+                lectureContent: `
+                    <p class="font-bold text-teal-800">究極の脱力と、一繋がりの円</p>
+                    <p>1回の呼吸に20秒をかける達人の領域です。ここまで来ると、呼吸をしていることすら忘れるような、極限の「無」に近い状態（深い副交感神経優位）に入ります。</p>
+                    <p><strong>意識すること：</strong><br>吸う息から吐く息へ、吐く息から吸う息へ。途切れることなく滑らかな「円」を描くように呼吸を循環させます。吐き切った後の一瞬の静寂（自然な間）を感じ取りながら、ただ座る「只管打坐（しかんたざ）」に没頭してください。</p>
+                `
+            },
+            '478': { 
+                name: '4-7-8呼吸法', in: 4, hold1: 7, ex: 8, hold2: 0,
+                lectureTitle: '4-7-8 呼吸法のやり方',
+                lectureContent: `
+                    <p class="font-bold text-teal-800">入眠・極度の緊張緩和に</p>
+                    <p>アリゾナ大学のワイル博士が提唱した「自然の精神安定剤」です。息を長く止めることで血中の酸素濃度を変化させます。</p>
+                    <p><strong>意識すること：</strong><br>1. 息を完全に吐き切ってからスタートします。<br>2. <span class="underline">7秒間息を止める（ホールド）</span>のが最大のポイントです。苦しくてもぐっと堪え、体内に酸素が巡るのを感じます。<br>3. 8秒かけて「フーッ」と音を立てるように口から一気に息を吐き出します。</p>
+                `
+            },
+            'box': { 
+                name: 'Box呼吸法', in: 4, hold1: 4, ex: 4, hold2: 4,
+                lectureTitle: 'Box 呼吸法（ネイビーシールズ式）',
+                lectureContent: `
+                    <p class="font-bold text-teal-800">パニックの鎮静と、集中力の限界突破</p>
+                    <p>米軍特殊部隊が戦場で冷静さを保つために使う手法です。自律神経のシーソーを完全に「水平（リセット）」にします。</p>
+                    <p><strong>意識すること：</strong><br>すべての動作を「4秒」の均等な箱（ボックス）の形で行います。特に重要なのは、息を吐き切って<span class="underline">肺が空っぽの状態で4秒間止める</span>ことです。この適度な負荷が、精神のブレを無くし、研ぎ澄まされた集中力を作ります。</p>
+                `
+            }
+        };
+
+        // --- 状態変数 ---
+        let currentMode = 'zen1';
+        let timerMinutes = 15;
+        let isRunning = false;
+        let totalSeconds = 0;
+        let cycleSeconds = 0;
+        let currentCycleLength = 0;
+        let breathCount = 0;
+        let currentPhase = ''; 
+        
+        let mainInterval = null;
+        let animationFrame = null;
+        let startTime = 0;
+        let wakeLock = null;
+
+        // --- DOM要素 ---
+        const els = {
+            modeSelect: document.getElementById('modeSelect'),
+            lectureTitle: document.getElementById('lectureTitle'),
+            lectureContent: document.getElementById('lectureContent'),
+            valInhale: document.getElementById('valInhale'),
+            valHold1: document.getElementById('valHold1'),
+            valExhale: document.getElementById('valExhale'),
+            valHold2: document.getElementById('valHold2'),
+            timeMinusBtn: document.getElementById('timeMinusBtn'),
+            timePlusBtn: document.getElementById('timePlusBtn'),
+            timeSettingText: document.getElementById('timeSettingText'),
+            startBtn: document.getElementById('startBtn'),
+            stopBtn: document.getElementById('stopBtn'),
+            resetBtn: document.getElementById('resetBtn'),
+            countdownText: document.getElementById('countdownText'),
+            displayTime: document.getElementById('displayTime'),
+            displayBreaths: document.getElementById('displayBreaths'),
+            displayPhase: document.getElementById('displayPhase'),
+            graphSvg: document.getElementById('graphSvg'),
+            graphPath: document.getElementById('graphPath'),
+            indicator: document.getElementById('indicator'),
+            stateTextBg: document.getElementById('stateTextBg'),
+            vibrateToggle: document.getElementById('vibrateToggle'),
+            dimOverlay: document.getElementById('dimOverlay'),
+            infoBtn: document.getElementById('infoBtn'),
+            infoSection: document.getElementById('infoSection')
+        };
+
+        // --- 初期化 ---
+        function init() {
+            updateModeDisplay();
+            updateTimeSettingDisplay();
+            
+            // リサイズ時に再描画（アスペクト比計算のため）
+            window.addEventListener('resize', drawGraphBase);
+            // 最初の描画は少し遅らせてDOM要素のサイズを確定させる
+            setTimeout(drawGraphBase, 50);
+            
+            // イベントリスナー
+            els.modeSelect.addEventListener('change', (e) => {
+                currentMode = e.target.value;
+                updateModeDisplay();
+                drawGraphBase();
+            });
+
+            els.timeMinusBtn.addEventListener('click', () => {
+                if(timerMinutes > 1) { timerMinutes--; updateTimeSettingDisplay(); }
+            });
+            els.timePlusBtn.addEventListener('click', () => {
+                if(timerMinutes < 60) { timerMinutes++; updateTimeSettingDisplay(); }
+            });
+
+            els.startBtn.addEventListener('click', startCountdown);
+            els.stopBtn.addEventListener('click', stopSession);
+            els.resetBtn.addEventListener('click', resetSession);
+            
+            els.infoBtn.addEventListener('click', () => {
+                els.infoSection.classList.toggle('hidden');
+            });
+        }
+
+        function updateModeDisplay() {
+            const m = MODES[currentMode];
+            // 数値更新
+            els.valInhale.textContent = m.in.toFixed(1) + 's';
+            els.valHold1.textContent = m.hold1.toFixed(1) + 's';
+            els.valExhale.textContent = m.ex.toFixed(1) + 's';
+            els.valHold2.textContent = m.hold2.toFixed(1) + 's';
+            
+            // レクチャー更新
+            els.lectureTitle.innerHTML = `<i class="fa-solid ${currentMode.includes('zen') ? 'fa-person-praying' : 'fa-wind'} mr-2"></i>${m.lectureTitle}`;
+            els.lectureContent.innerHTML = m.lectureContent;
+            
+            currentCycleLength = m.in + m.hold1 + m.ex + m.hold2;
+            
+            // 文字色調整
+            els.valHold1.className = m.hold1 > 0 ? "text-lg font-medium text-slate-700 mt-1" : "text-lg font-medium text-slate-300 mt-1";
+            els.valHold2.className = m.hold2 > 0 ? "text-lg font-medium text-slate-700 mt-1" : "text-lg font-medium text-slate-300 mt-1";
+        }
+
+        function updateTimeDisplay(remainingSecs) {
+            const m = Math.floor(remainingSecs / 60);
+            const s = Math.floor(remainingSecs % 60);
+            els.displayTime.textContent = `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+            els.displayBreaths.textContent = `Breaths: ${breathCount}`;
+        }
+
+        function updateTimeSettingDisplay() {
+            els.timeSettingText.textContent = timerMinutes + 'm';
+            updateTimeDisplay(timerMinutes * 60);
+        }
+
+        // --- グラフ描画（SVG） ---
+        function drawGraphBase() {
+            const m = MODES[currentMode];
+            const total = m.in + m.hold1 + m.ex + m.hold2;
+            
+            // X座標は0〜100(%)のまま扱う
+            const x1 = (m.in / total) * 100;
+            const x2 = x1 + ((m.hold1 / total) * 100);
+            const x3 = x2 + ((m.ex / total) * 100);
+            const x4 = 100;
+
+            const yBottom = 90;
+            const yTop = 10;
+
+            const d = `M 0 ${yBottom} L ${x1} ${yTop} L ${x2} ${yTop} L ${x3} ${yBottom} L ${x4} ${yBottom}`;
+            els.graphPath.setAttribute('d', d);
+            
+            // リセット時インジケーター位置
+            els.indicator.setAttribute('cx', '0');
+            els.indicator.setAttribute('cy', yBottom.toString());
+        }
+
+        function updateGraphIndicator(cycleProgressSec) {
+            const m = MODES[currentMode];
+            const total = currentCycleLength;
+            let percent = cycleProgressSec / total; 
+            
+            let y = 90;
+            let currentX = percent * 100;
+
+            if (cycleProgressSec <= m.in) {
+                // 吸う
+                let p = cycleProgressSec / m.in;
+                y = 90 - (80 * p);
+                checkPhaseChange('in');
+            } else if (cycleProgressSec <= (m.in + m.hold1)) {
+                // 止める1
+                y = 10;
+                checkPhaseChange('hold1');
+            } else if (cycleProgressSec <= (m.in + m.hold1 + m.ex)) {
+                // 吐く
+                let p = (cycleProgressSec - m.in - m.hold1) / m.ex;
+                y = 10 + (80 * p);
+                checkPhaseChange('ex');
+            } else {
+                // 止める2
+                y = 90;
+                checkPhaseChange('hold2');
+            }
+
+            els.indicator.setAttribute('cx', currentX.toString());
+            els.indicator.setAttribute('cy', y.toString());
+        }
+
+        // --- 振動とフェーズ管理 ---
+        function checkPhaseChange(newPhase) {
+            if (currentPhase !== newPhase) {
+                currentPhase = newPhase;
+                
+                let phaseText = '';
+                let bgColor = '';
+                
+                switch(newPhase) {
+                    case 'in': 
+                        phaseText = 'INHALE'; 
+                        bgColor = 'text-teal-50';
+                        vibrate([200, 100, 200]); // 短く2回
+                        if(cycleSeconds < 0.5) breathCount++;
+                        break;
+                    case 'hold1': 
+                    case 'hold2':
+                        phaseText = 'HOLD'; 
+                        bgColor = 'text-slate-50';
+                        vibrate(200); // 短く1回
+                        break;
+                    case 'ex': 
+                        phaseText = 'EXHALE'; 
+                        bgColor = 'text-emerald-50';
+                        vibrate(200); // 短く1回
+                        break;
+                }
+                
+                els.displayPhase.textContent = `Phase: ${phaseText}`;
+                
+                // 背景テキスト
+                els.stateTextBg.textContent = phaseText;
+                els.stateTextBg.className = `absolute inset-0 flex items-center justify-center text-5xl md:text-7xl font-bold transition-colors duration-1000 opacity-20 pointer-events-none select-none ${bgColor}`;
+            }
+        }
+
+        function vibrate(pattern) {
+            if (els.vibrateToggle.checked && navigator.vibrate) {
+                navigator.vibrate(pattern);
+            }
+        }
+
+        // --- セッション管理 ---
+        function startCountdown() {
+            els.startBtn.classList.add('hidden');
+            els.countdownText.classList.remove('hidden');
+            
+            els.modeSelect.disabled = true;
+            els.timeMinusBtn.disabled = true;
+            els.timePlusBtn.disabled = true;
+            els.resetBtn.disabled = true;
+            els.graphSvg.classList.remove('opacity-30');
+            els.graphSvg.classList.add('opacity-100');
+            
+            let count = 3;
+            els.countdownText.textContent = count;
+            
+            const countInterval = setInterval(() => {
+                count--;
+                if (count > 0) {
+                    els.countdownText.textContent = count;
+                } else {
+                    clearInterval(countInterval);
+                    els.countdownText.classList.add('hidden');
+                    els.stopBtn.classList.remove('hidden');
+                    startSession();
+                }
+            }, 1000);
+        }
+
+        async function startSession() {
+            isRunning = true;
+            totalSeconds = timerMinutes * 60;
+            cycleSeconds = 0;
+            breathCount = 0;
+            currentPhase = '';
+            startTime = performance.now();
+            
+            els.dimOverlay.classList.remove('opacity-0');
+            els.dimOverlay.classList.add('opacity-50'); 
+
+            try {
+                if ('wakeLock' in navigator) {
+                    wakeLock = await navigator.wakeLock.request('screen');
+                }
+            } catch (err) {}
+
+            requestAnimationFrame(animationLoop);
+        }
+
+        function animationLoop(timestamp) {
+            if (!isRunning) return;
+
+            const elapsedTotalMs = timestamp - startTime;
+            const remainingSecs = Math.max(0, totalSeconds - (elapsedTotalMs / 1000));
+            
+            updateTimeDisplay(remainingSecs);
+
+            if (remainingSecs <= 0) {
+                finishSession();
+                return;
+            }
+
+            cycleSeconds = (elapsedTotalMs / 1000) % currentCycleLength;
+            updateGraphIndicator(cycleSeconds);
+
+            animationFrame = requestAnimationFrame(animationLoop);
+        }
+
+        function stopSession() {
+            isRunning = false;
+            cancelAnimationFrame(animationFrame);
+            if(wakeLock) { wakeLock.release().then(() => wakeLock = null); }
+            
+            els.stopBtn.classList.add('hidden');
+            els.startBtn.classList.remove('hidden');
+            els.startBtn.textContent = 'Resume'; 
+            els.resetBtn.disabled = false;
+            
+            els.dimOverlay.classList.remove('opacity-50');
+            els.dimOverlay.classList.add('opacity-0');
+            els.graphSvg.classList.remove('opacity-100');
+            els.graphSvg.classList.add('opacity-30');
+            
+            els.stateTextBg.classList.remove('opacity-20');
+            els.stateTextBg.classList.add('opacity-0');
+        }
+
+        function resetSession() {
+            stopSession();
+            els.startBtn.textContent = 'Press to Start';
+            els.modeSelect.disabled = false;
+            els.timeMinusBtn.disabled = false;
+            els.timePlusBtn.disabled = false;
+            els.displayPhase.textContent = 'Phase: WAIT';
+            breathCount = 0;
+            updateTimeSettingDisplay();
+            drawGraphBase();
+        }
+
+        function finishSession() {
+            stopSession();
+            vibrate([500, 200, 500, 200, 1000]); 
+            els.displayTime.textContent = "00:00";
+            els.startBtn.textContent = 'Completed!';
+            els.displayPhase.textContent = 'Phase: DONE';
+            setTimeout(() => {
+                resetSession();
+            }, 3000);
+        }
+
+        // 実行
+        init();
+
+    </script>
+</body>
+</html>

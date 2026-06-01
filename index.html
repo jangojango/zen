@@ -134,15 +134,28 @@
                     </label>
                 </div>
                 
-                <!-- 強さの選択（3段階） -->
+                <!-- 強さの選択（2段階に変更） -->
                 <div class="flex justify-between items-center pt-3 border-t border-slate-50 mt-3">
                     <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Intensity (強さ)</span>
                     <select id="vibrateIntensity" class="bg-slate-50 border border-slate-100 text-slate-600 text-sm font-bold rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-teal-400">
-                        <option value="soft">Soft (40ms)</option>
-                        <option value="medium" selected>Medium (60ms)</option>
-                        <option value="strong">Strong (80ms)</option>
+                        <option value="soft">弱い (40ms)</option>
+                        <option value="normal" selected>標準 (50ms)</option>
                     </select>
                 </div>
+            </div>
+
+            <!-- ベース解説 (info) -->
+            <div id="infoSection" class="hidden bg-white rounded-2xl p-5 shadow-sm border border-slate-100 text-sm text-slate-600 space-y-4">
+                <h3 class="font-bold text-slate-700 border-b border-slate-100 pb-2"><i class="fa-solid fa-book-open mr-2 text-teal-500"></i>使い方と仕組み</h3>
+                <p>目を閉じ、スマホの振動だけを頼りに呼吸します。画面の自動消灯を防止する機能（WakeLock）を搭載しているため、座禅中に画面が暗くなることはありません。</p>
+                <h4 class="font-bold text-slate-700 mt-4 mb-2">振動のルール</h4>
+                <ul class="list-disc pl-5 space-y-2">
+                    <li><strong>吸う前：</strong> 短く <span class="text-teal-600 font-bold">2回</span> 振動</li>
+                    <li><strong>吐く前・止める前：</strong> 短く <span class="text-slate-500 font-bold">1回</span> 振動</li>
+                    <li><strong>終了時：</strong> 長めに <span class="text-rose-400 font-bold">3回</span> 振動</li>
+                </ul>
+                <p class="text-xs text-slate-400 mt-2">※ 振動時間を非常に短く設定（40〜50ms）しているため、「ブーッ」という音ではなく「トンッ」という軽い指先の触覚（ハプティクス）として感じられます。</p>
+            </div>
             </div>
 
             <!-- ベース解説 (info) -->
@@ -304,12 +317,11 @@
             els.timeMinusBtn.addEventListener('click', () => { if(timerMinutes > 1) { timerMinutes--; updateTimeSettingDisplay(); }});
             els.timePlusBtn.addEventListener('click', () => { if(timerMinutes < 60) { timerMinutes++; updateTimeSettingDisplay(); }});
 
-            // 振動の長さを取得するヘルパー関数 (40ms / 60ms / 80ms)
+            // 振動の長さを取得するヘルパー関数 (40ms / 50ms)
             function getBaseVibeMs() {
                 const val = els.vibrateIntensity.value;
-                if (val === 'soft') return 45;     
-                if (val === 'medium') return 55;  
-                return 65;                        
+                if (val === 'soft') return 40;     
+                return 50;                        
             }
 
             els.startBtn.addEventListener('click', () => {

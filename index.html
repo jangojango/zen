@@ -134,11 +134,12 @@
                     </label>
                 </div>
                 
-                <!-- 強さの選択 -->
+                <!-- 強さの選択（3段階） -->
                 <div class="flex justify-between items-center pt-3 border-t border-slate-50 mt-3">
                     <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Intensity (強さ)</span>
                     <select id="vibrateIntensity" class="bg-slate-50 border border-slate-100 text-slate-600 text-sm font-bold rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-teal-400">
-                        <option value="soft" selected>Soft (短く優しい)</option>
+                        <option value="soft">Soft (軽め)</option>
+                        <option value="medium" selected>Medium (標準)</option>
                         <option value="strong">Strong (しっかり)</option>
                     </select>
                 </div>
@@ -153,7 +154,6 @@
                     <li><strong>吐く前・止める前：</strong> 短く <span class="text-slate-500 font-bold">1回</span> 振動</li>
                     <li><strong>終了時：</strong> 長めに <span class="text-rose-400 font-bold">3回</span> 振動</li>
                 </ul>
-                <p class="text-xs text-slate-400 mt-2">※ Softモードは振動時間を極端に短くすることで「トンッ」という軽い触感を生み出します。</p>
             </div>
 
         </div>
@@ -264,11 +264,18 @@
             els.timeMinusBtn.addEventListener('click', () => { if(timerMinutes > 1) { timerMinutes--; updateTimeSettingDisplay(); }});
             els.timePlusBtn.addEventListener('click', () => { if(timerMinutes < 60) { timerMinutes++; updateTimeSettingDisplay(); }});
 
+            // 振動の長さを取得するヘルパー関数
+            function getBaseVibeMs() {
+                const val = els.vibrateIntensity.value;
+                if (val === 'soft') return 80;     // 軽め
+                if (val === 'medium') return 150;  // 標準
+                return 300;                        // しっかり
+            }
+
             els.startBtn.addEventListener('click', () => {
                 // スタート時のテスト振動
                 if (navigator.vibrate && els.vibrateToggle.checked) {
-                    const isSoft = els.vibrateIntensity.value === 'soft';
-                    navigator.vibrate(isSoft ? 40 : 200); 
+                    navigator.vibrate(getBaseVibeMs()); 
                 }
                 startCountdown();
             });
@@ -397,32 +404,41 @@
             els.indicator.style.top = `${currentY}px`;
         }
 
+        // 強さから基準のミリ秒を取得
+        function getBaseVibeMs() {
+            const val = els.vibrateIntensity.value;
+            if (val === 'soft') return 80;
+            if (val === 'medium') return 150;
+            return 300;
+        }
+
         function checkPhaseChange(newPhase) {
             if (currentPhase !== newPhase) {
                 currentPhase = newPhase;
                 
                 let phaseText = '';
                 let bgColor = '';
+                
+                const baseMs = getBaseVibeMs();
                 let vibPattern = [];
-                const isSoft = els.vibrateIntensity.value === 'soft';
                 
                 switch(newPhase) {
                     case 'in': 
                         phaseText = 'INHALE'; 
                         bgColor = 'text-teal-50';
-                        vibPattern = isSoft ? [40, 50, 40] : [200, 100, 200];
+                        vibPattern = [baseMs, 100, baseMs]; // 短く2回
                         if(cycleSeconds < 0.5) breathCount++;
                         break;
                     case 'hold1': 
                     case 'hold2':
                         phaseText = 'HOLD'; 
                         bgColor = 'text-slate-50';
-                        vibPattern = isSoft ? [40] : [200];
+                        vibPattern = [baseMs]; // 短く1回
                         break;
                     case 'ex': 
                         phaseText = 'EXHALE'; 
                         bgColor = 'text-emerald-50';
-                        vibPattern = isSoft ? [40] : [200];
+                        vibPattern = [baseMs]; // 短く1回
                         break;
                 }
                 
@@ -539,8 +555,10 @@
 
         function finishSession() {
             stopSession();
-            const isSoft = els.vibrateIntensity.value === 'soft';
-            vibrate(isSoft ? [100, 100, 100, 100, 300] : [500, 200, 500, 200, 1000]); 
+            const baseMs = getBaseVibeMs();
+            // 終了時は長めに3回鳴らすパターンをベースから生成
+            vibrate([baseMs*2, 150, baseMs*2, 150, baseMs*4]); 
+            
             els.displayTime.textContent = "00:00";
             els.startBtn.textContent = 'Completed!';
             els.displayPhase.textContent = 'Phase: DONE';

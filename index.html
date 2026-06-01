@@ -81,7 +81,7 @@
                 <h3 id="lectureTitle" class="text-teal-700 font-bold mb-3 flex items-center">
                     <i class="fa-solid fa-person-praying mr-2"></i>座禅 初級の心得
                 </h3>
-                <div id="lectureContent" class="text-sm text-slate-600 space-y-3 leading-relaxed">
+                <div id="lectureContent" class="text-sm text-slate-700 space-y-3 leading-relaxed">
                     <!-- JSで挿入 -->
                 </div>
             </div>
@@ -138,22 +138,24 @@
                 <div class="flex justify-between items-center pt-3 border-t border-slate-50 mt-3">
                     <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Intensity (強さ)</span>
                     <select id="vibrateIntensity" class="bg-slate-50 border border-slate-100 text-slate-600 text-sm font-bold rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-teal-400">
-                        <option value="soft">Soft (軽め)</option>
-                        <option value="medium" selected>Medium (標準)</option>
-                        <option value="strong">Strong (しっかり)</option>
+                        <option value="soft">Soft (40ms)</option>
+                        <option value="medium" selected>Medium (60ms)</option>
+                        <option value="strong">Strong (80ms)</option>
                     </select>
                 </div>
             </div>
 
             <!-- ベース解説 (info) -->
             <div id="infoSection" class="hidden bg-white rounded-2xl p-5 shadow-sm border border-slate-100 text-sm text-slate-600 space-y-4">
-                <h3 class="font-bold text-slate-700 border-b border-slate-100 pb-2"><i class="fa-solid fa-book-open mr-2 text-teal-500"></i>使い方</h3>
-                <p>目を閉じ、スマホの振動だけを頼りに呼吸します。</p>
+                <h3 class="font-bold text-slate-700 border-b border-slate-100 pb-2"><i class="fa-solid fa-book-open mr-2 text-teal-500"></i>使い方と仕組み</h3>
+                <p>目を閉じ、スマホの振動だけを頼りに呼吸します。画面の自動消灯を防止する機能（WakeLock）を搭載しているため、座禅中に画面が暗くなることはありません。</p>
+                <h4 class="font-bold text-slate-700 mt-4 mb-2">振動のルール</h4>
                 <ul class="list-disc pl-5 space-y-2">
                     <li><strong>吸う前：</strong> 短く <span class="text-teal-600 font-bold">2回</span> 振動</li>
                     <li><strong>吐く前・止める前：</strong> 短く <span class="text-slate-500 font-bold">1回</span> 振動</li>
                     <li><strong>終了時：</strong> 長めに <span class="text-rose-400 font-bold">3回</span> 振動</li>
                 </ul>
+                <p class="text-xs text-slate-400 mt-2">※ 振動時間を非常に短く設定（40〜80ms）しているため、「ブーッ」という音ではなく「トンッ」という軽い指先の触覚（ハプティクス）として感じられます。</p>
             </div>
 
         </div>
@@ -177,28 +179,66 @@
         const MODES = {
             'zen1': { 
                 name: '座禅 初級', in: 4, hold1: 0, ex: 8, hold2: 0,
-                lectureTitle: '座禅 初級の心得',
-                lectureContent: '<p class="font-bold text-teal-800">「1吸って、2吐く」基本のリズム</p><p>おへその少し下（丹田）に意識を向け、空気を「自然に入れる」感覚と、「細く長く押し出す」感覚を掴みます。</p>'
+                lectureTitle: '座禅の基礎「数息観（すそくかん）」',
+                lectureContent: `
+                    <p class="text-xs font-bold text-teal-600 mb-1 border-b border-teal-100 pb-1">■ 目的と効果</p>
+                    <p class="mb-3">吸う時間の「倍」の時間をかけて吐き切る、座禅の最も基本となる呼吸法です。副交感神経（リラックス）を穏やかに優位にし、日常のストレスや雑念を鎮めます。</p>
+                    <p class="text-xs font-bold text-slate-500 mb-1 border-b border-slate-200 pb-1">■ 意識すること・気をつける点</p>
+                    <ul class="list-disc pl-4 space-y-1 text-slate-600">
+                        <li>おへその少し下（丹田）に意識を集中します。</li>
+                        <li><strong>「吸う息は自然に任せ、吐く息を細く長く」</strong>が鉄則です。無理に息を絞り出そうとせず、風船の空気が自然に抜けていくような感覚で行います。</li>
+                        <li>途中で雑念が浮かんでも気にせず、意識をただ「吐く息」に戻してください。</li>
+                    </ul>`
             },
             'zen2': { 
                 name: '座禅 中級', in: 4, hold1: 0, ex: 12, hold2: 0,
-                lectureTitle: '座禅 中級の心得',
-                lectureContent: '<p class="font-bold text-teal-800">呼間（吐く時間）を伸ばし、より深く</p><p>初級の「細く長く」をさらに洗練させます。鼻の前に鳥の羽を置いても揺れないくらい、静かで穏やかな呼吸を目指します。</p>'
+                lectureTitle: '呼間（吐く時間）の延長',
+                lectureContent: `
+                    <p class="text-xs font-bold text-teal-600 mb-1 border-b border-teal-100 pb-1">■ 目的と効果</p>
+                    <p class="mb-3">初級の「細く長く」をさらに洗練させ、12秒かけてゆっくりと息を吐き出します。横隔膜の深いコントロールにより、さらに一段階深い瞑想状態（アルファ波の増加）へと導きます。</p>
+                    <p class="text-xs font-bold text-slate-500 mb-1 border-b border-slate-200 pb-1">■ 意識すること・気をつける点</p>
+                    <ul class="list-disc pl-4 space-y-1 text-slate-600">
+                        <li>「鼻の前に鳥の羽を置いても揺れないくらい静か」な呼吸を目指します。</li>
+                        <li><strong>息苦しさ（交感神経の緊張）を感じたら、それは「力み」が生じている証拠（逆効果）です。</strong></li>
+                        <li>苦しい時は無理をせず、いつでも初級（8秒）に戻ってください。自然に12秒吐ける状態が理想です。</li>
+                    </ul>`
             },
             'zen3': { 
                 name: '座禅 上級', in: 4, hold1: 0, ex: 16, hold2: 0,
-                lectureTitle: '座禅 上級（達人の領域）',
-                lectureContent: '<p class="font-bold text-teal-800">究極の脱力と、一繋がりの円</p><p>吸う息から吐く息へ途切れることなく滑らかな「円」を描くように呼吸を循環させます。</p>'
+                lectureTitle: '達人の領域「一繋がりの円」',
+                lectureContent: `
+                    <p class="text-xs font-bold text-teal-600 mb-1 border-b border-teal-100 pb-1">■ 目的と効果</p>
+                    <p class="mb-3">1回の呼吸サイクルに20秒をかける達人の領域です。ここまで来ると「呼吸をしていることすら忘れる」ような、極限の「無（深い副交感神経優位）」に近い状態に入ります。</p>
+                    <p class="text-xs font-bold text-slate-500 mb-1 border-b border-slate-200 pb-1">■ 意識すること・気をつける点</p>
+                    <ul class="list-disc pl-4 space-y-1 text-slate-600">
+                        <li>究極の脱力が必要です。吸う息から吐く息へ、吐く息から吸う息へ、途切れることなく滑らかな「円」を描くように循環させます。</li>
+                        <li>吐き切った後に訪れる<strong>「一瞬の静寂（自然な間）」</strong>を感じ取りながら、ただ座る「只管打坐（しかんたざ）」に没頭してください。</li>
+                    </ul>`
             },
             '478': { 
                 name: '4-7-8呼吸法', in: 4, hold1: 7, ex: 8, hold2: 0,
-                lectureTitle: '4-7-8 呼吸法のやり方',
-                lectureContent: '<p class="font-bold text-teal-800">入眠・極度の緊張緩和に</p><p><span class="underline">7秒間息を止める（ホールド）</span>のが最大のポイントです。苦しくてもぐっと堪え、体内に酸素が巡るのを感じます。</p>'
+                lectureTitle: '自然の精神安定剤「4-7-8」',
+                lectureContent: `
+                    <p class="text-xs font-bold text-teal-600 mb-1 border-b border-teal-100 pb-1">■ 目的と効果</p>
+                    <p class="mb-3">アリゾナ大学のワイル博士が提唱したメソッド。息を長く止めることで血中の二酸化炭素濃度を一時的に高め、次に深く吐き出すことで、極度の緊張緩和や強力な入眠効果をもたらします。</p>
+                    <p class="text-xs font-bold text-slate-500 mb-1 border-b border-slate-200 pb-1">■ 意識すること・気をつける点</p>
+                    <ul class="list-disc pl-4 space-y-1 text-slate-600">
+                        <li>まずは息を完全に吐き切ってからスタートします。</li>
+                        <li><strong>最大のポイントは「7秒間息を止める（ホールド）」こと。</strong>苦しくても堪え、体内に酸素が巡るのを感じます。</li>
+                        <li>8秒かけて吐く時は、「フーッ」と音を立てるように口から一気に息を押し出します。</li>
+                    </ul>`
             },
             'box': { 
                 name: 'Box呼吸法', in: 4, hold1: 4, ex: 4, hold2: 4,
-                lectureTitle: 'Box 呼吸法（ネイビーシールズ式）',
-                lectureContent: '<p class="font-bold text-teal-800">パニックの鎮静と、集中力の限界突破</p><p>すべての動作を「4秒」の均等な箱の形で行います。<span class="underline">肺が空っぽの状態で4秒間止める</span>ことで精神のブレを無くします。</p>'
+                lectureTitle: 'ネイビーシールズ式「Box」',
+                lectureContent: `
+                    <p class="text-xs font-bold text-teal-600 mb-1 border-b border-teal-100 pb-1">■ 目的と効果</p>
+                    <p class="mb-3">米軍特殊部隊が戦場で冷静さを保つために使う手法。自律神経の交感神経（緊張）と副交感神経（緩和）のシーソーを完全に水平にリセットし、パニックを鎮め、研ぎ澄まされた集中力を作ります。</p>
+                    <p class="text-xs font-bold text-slate-500 mb-1 border-b border-slate-200 pb-1">■ 意識すること・気をつける点</p>
+                    <ul class="list-disc pl-4 space-y-1 text-slate-600">
+                        <li>すべての動作を「4秒」の均等な四角形（ボックス）を描くイメージで行います。</li>
+                        <li><strong>一番重要なのは「息を完全に吐き切って、肺が空っぽの状態で4秒間止める」こと。</strong>この適度な負荷が、精神のブレを無くします。</li>
+                    </ul>`
             }
         };
 
@@ -264,12 +304,12 @@
             els.timeMinusBtn.addEventListener('click', () => { if(timerMinutes > 1) { timerMinutes--; updateTimeSettingDisplay(); }});
             els.timePlusBtn.addEventListener('click', () => { if(timerMinutes < 60) { timerMinutes++; updateTimeSettingDisplay(); }});
 
-            // 振動の長さを取得するヘルパー関数
+            // 振動の長さを取得するヘルパー関数 (40ms / 60ms / 80ms)
             function getBaseVibeMs() {
                 const val = els.vibrateIntensity.value;
-                if (val === 'soft') return 80;     // 軽め
-                if (val === 'medium') return 150;  // 標準
-                return 300;                        // しっかり
+                if (val === 'soft') return 40;     
+                if (val === 'medium') return 60;  
+                return 80;                        
             }
 
             els.startBtn.addEventListener('click', () => {
@@ -404,12 +444,11 @@
             els.indicator.style.top = `${currentY}px`;
         }
 
-        // 強さから基準のミリ秒を取得
         function getBaseVibeMs() {
             const val = els.vibrateIntensity.value;
-            if (val === 'soft') return 80;
-            if (val === 'medium') return 150;
-            return 300;
+            if (val === 'soft') return 40;     
+            if (val === 'medium') return 60;  
+            return 80;                        
         }
 
         function checkPhaseChange(newPhase) {
@@ -426,19 +465,20 @@
                     case 'in': 
                         phaseText = 'INHALE'; 
                         bgColor = 'text-teal-50';
-                        vibPattern = [baseMs, 100, baseMs]; // 短く2回
+                        // 吸う前：設定ミリ秒で2回（間隔も同じ長さに）
+                        vibPattern = [baseMs, baseMs, baseMs]; 
                         if(cycleSeconds < 0.5) breathCount++;
                         break;
                     case 'hold1': 
                     case 'hold2':
                         phaseText = 'HOLD'; 
                         bgColor = 'text-slate-50';
-                        vibPattern = [baseMs]; // 短く1回
+                        vibPattern = [baseMs]; // 止める前：1回
                         break;
                     case 'ex': 
                         phaseText = 'EXHALE'; 
                         bgColor = 'text-emerald-50';
-                        vibPattern = [baseMs]; // 短く1回
+                        vibPattern = [baseMs]; // 吐く前：1回
                         break;
                 }
                 
@@ -556,8 +596,8 @@
         function finishSession() {
             stopSession();
             const baseMs = getBaseVibeMs();
-            // 終了時は長めに3回鳴らすパターンをベースから生成
-            vibrate([baseMs*2, 150, baseMs*2, 150, baseMs*4]); 
+            // 終了時はベースの2倍・4倍の長さで鳴らして確実に気付かせる
+            vibrate([baseMs*2, 100, baseMs*2, 100, baseMs*4]); 
             
             els.displayTime.textContent = "00:00";
             els.startBtn.textContent = 'Completed!';

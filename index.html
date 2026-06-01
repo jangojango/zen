@@ -10,8 +10,8 @@
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&display=swap');
         body { font-family: 'Noto Sans JP', sans-serif; background-color: #f8fafc; color: #334155; overscroll-behavior-y: none; }
         
-        /* インジケーター（丸）のトランジション */
-        #indicator { transition: left 0.1s linear, top 0.1s linear; }
+        /* インジケーター（丸）のトランジションはJSで動的に制御するため、ここでは定義しない */
+        #indicator { will-change: left, top; }
         
         /* トグルスイッチ用 */
         input:checked ~ .dot { transform: translateX(100%); }
@@ -52,7 +52,7 @@
                 <div id="displayPhase">Phase: WAIT</div>
             </div>
 
-            <!-- Canvas描画エリア (見切れ防止のためCanvasを使用) -->
+            <!-- Canvas描画エリア (見切れ防止) -->
             <canvas id="graphCanvas" class="absolute inset-0 w-full h-full opacity-40"></canvas>
             
             <!-- インジケーター（絶対座標で配置するまん丸のDIV） -->
@@ -207,7 +207,7 @@
         let currentCycleLength = 0;
         let breathCount = 0;
         let currentPhase = ''; 
-        let hasUnlockedVibration = false; // 振動許可フラグ
+        let lastIndicatorX = 0; // 前回インジケーターがいたX座標
         
         let mainInterval = null;
         let animationFrame = null;
@@ -261,10 +261,10 @@
             els.timePlusBtn.addEventListener('click', () => { if(timerMinutes < 60) { timerMinutes++; updateTimeSettingDisplay(); }});
 
             els.startBtn.addEventListener('click', () => {
-                // 【振動ブロック解除の裏技】ユーザーアクション直後に無音の極小振動を実行
-                if (navigator.vibrate && !hasUnlockedVibration) {
-                    navigator.vibrate(1);
-                    hasUnlockedVibration = true;
+                // 【振動テスト＆ロック解除】スタートボタンを押した瞬間に明確に1回振動させる
+                // これで震えなければ、スマホ側の設定が原因の可能性が高いです。
+                if (navigator.vibrate && els.vibrateToggle.checked) {
+                    navigator.vibrate(200); 
                 }
                 startCountdown();
             });
@@ -300,10 +300,9 @@
         }
 
         // --- Canvasを使った確実な描画 ---
-        let points = []; // 計算済みのX,Y座標を保存
+        let points = []; 
         
         function drawCanvasGraph() {
-            // 解像度を合わせる
             const rect = els.visualArea.getBoundingClientRect();
             els.canvas.width = rect.width;
             els.canvas.height = rect.height;
@@ -311,7 +310,6 @@
             const w = els.canvas.width;
             const h = els.canvas.height;
             
-            // 上下左右に15pxのマージンを取り、絶対に見切れないようにする
             const margin = 15;
             const drawW = w - (margin * 2);
             const drawH = h - (margin * 2);
@@ -328,7 +326,6 @@
             const x3 = x2 + (drawW * (m.ex / total));
             const x4 = xOffset + drawW;
 
-            // 座標を保存（アニメーション計算用）
             points = [
                 {x: xOffset, y: yBottom},
                 {x: x1, y: yTop},
@@ -337,7 +334,6 @@
                 {x: x4, y: yBottom}
             ];
 
-            // 描画
             ctx.clearRect(0, 0, w, h);
             ctx.beginPath();
             ctx.moveTo(points[0].x, points[0].y);
@@ -346,13 +342,16 @@
             ctx.lineTo(points[3].x, points[3].y);
             ctx.lineTo(points[4].x, points[4].y);
             
-            ctx.strokeStyle = '#e2e8f0'; // slate-200 薄いグレー
-            ctx.lineWidth = 2; // 細く
+            ctx.strokeStyle = '#e2e8f0'; 
+            ctx.lineWidth = 2; 
             ctx.lineJoin = 'round';
             ctx.stroke();
             
-            // インジケーター初期化
-            updateGraphIndicator(0);
+            // リセット時、トランジションを切って強制配置
+            els.indicator.style.transition = 'none';
+            els.indicator.style.left = `${points[0].x}px`;
+            els.indicator.style.top = `${points[0].y}px`;
+            lastIndicatorX = points[0].x;
         }
 
         function updateGraphIndicator(cycleProgressSec) {
@@ -371,7 +370,7 @@
             } else if (cycleProgressSec <= (m.in + m.hold1)) {
                 let p = (cycleProgressSec - m.in) / m.hold1;
                 currentX = points[1].x + (points[2].x - points[1].x) * p;
-                currentY = points[1].y; // Flat
+                currentY = points[1].y; 
                 checkPhaseChange('hold1');
             } else if (cycleProgressSec <= (m.in + m.hold1 + m.ex)) {
                 let p = (cycleProgressSec - m.in - m.hold1) / m.ex;
@@ -381,11 +380,18 @@
             } else {
                 let p = (cycleProgressSec - m.in - m.hold1 - m.ex) / m.hold2;
                 currentX = points[3].x + (points[4].x - points[3].x) * p;
-                currentY = points[3].y; // Flat
+                currentY = points[3].y; 
                 checkPhaseChange('hold2');
             }
 
-            // CSSを使って絶対位置に丸を配置（絶対に楕円にならない）
+            // 【ワープ処理】現在のXが前回のXより大幅に左に戻った時だけアニメーションを切る
+            if (currentX < lastIndicatorX - 50) {
+                els.indicator.style.transition = 'none'; // アニメーション無効
+            } else {
+                els.indicator.style.transition = 'left 0.1s linear, top 0.1s linear'; // 通常アニメーション
+            }
+            lastIndicatorX = currentX;
+
             els.indicator.style.left = `${currentX}px`;
             els.indicator.style.top = `${currentY}px`;
         }
@@ -425,8 +431,13 @@
         }
 
         function vibrate(pattern) {
-            if (els.vibrateToggle.checked && navigator.vibrate) {
-                navigator.vibrate(pattern);
+            if (!els.vibrateToggle.checked) return;
+            try {
+                if (navigator.vibrate) {
+                    navigator.vibrate(pattern);
+                }
+            } catch(e) {
+                console.log("Vibration failed:", e);
             }
         }
 
